@@ -15,9 +15,6 @@
     <!-- 카카오 공유 SDK -->
     <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js" crossorigin="anonymous"></script>
 
-    <!-- Firebase SDK (방명록 DB 연동용) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -431,6 +428,10 @@
         .guest-date { color: #888; font-size: 0.8rem; }
         .guest-text { font-size: 0.95rem; color: #444; white-space: pre-wrap; word-break: break-all; line-height: 1.6; }
         .btn-delete { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #999; cursor: pointer; font-size: 1.2rem; }
+        .guest-msg-item .guest-msg-header { padding-right: 22px; }
+        .guestbook-status { font-size: 0.88rem; color: #888; margin: 0 auto 16px; }
+        .guestbook-status:empty { display: none; }
+        .btn-submit:disabled { opacity: 0.6; cursor: default; }
 
         /* 공유하기 & 푸터 */
         .share-section { padding: 60px 20px; text-align: center; background-color: #f8f8f8; }
@@ -528,6 +529,8 @@
         .cover-date { font-size: 1.15rem; font-weight: 600; }
         .calendar-time { font-size: 1.2rem; font-weight: 600; }
         .footer-copyright { font-size: 0.9rem; font-style: italic; line-height: 1.6; }
+        /* 기울임꼴 & 는 장식 모양이라 알아보기 어려워서, 보통 모양의 & 로 표시 */
+        .footer-copyright .amp { font-family: 'Gowun Batang', serif; font-style: normal; font-size: 0.85em; margin: 0 1px; }
         .env-sub { font-size: 0.75rem; font-weight: 500; }
         .env-date-info { font-size: 0.95rem; font-weight: 600; }
 
@@ -863,9 +866,12 @@
                 <input type="password" id="guestPwd" placeholder="비밀번호" maxlength="10">
             </div>
             <textarea id="guestMsg" rows="3" placeholder="축하 메시지를 남겨주세요." maxlength="200"></textarea>
-            <button class="btn-submit" onclick="submitMessage()">등록하기</button>
+            <!-- 자동 스팸 방지용 숨은 칸 (사람에게는 보이지 않음) -->
+            <input type="text" id="guestWebsite" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;">
+            <button class="btn-submit" id="guestSubmitBtn" onclick="submitMessage()">등록하기</button>
         </div>
 
+        <p class="guestbook-status" id="guestbookStatus">축하 메시지를 불러오는 중입니다...</p>
         <div class="guestbook-list" id="guestbookList"></div>
     </section>
 
@@ -881,7 +887,7 @@
                 청첩장 링크 복사
             </button>
         </div>
-        <p class="footer-copyright">Designed &amp; handcrafted with love by Dongjae<br>© 2027 Dongjae &amp; Haeryung</p>
+        <p class="footer-copyright">Designed <span class="amp">&amp;</span> handcrafted with love by DongJae<br>© 2027 DongJae <span class="amp">&amp;</span> HyeRyeung</p>
     </section>
 </div>
 
@@ -1460,119 +1466,116 @@
     // --- 계좌번호 아코디언 ---
     function toggleAccordion(id) { document.getElementById(id).classList.toggle('show'); }
 
-    // --- 방명록 (Firebase 연동 & LocalStorage 하이브리드) ---
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-        databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_PROJECT_ID.appspot.com",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
-
-    let db = null;
-    let isFirebaseActive = false;
-
-    try {
-        if (typeof firebase !== 'undefined' && firebaseConfig.apiKey !== "YOUR_API_KEY") {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.database();
-            isFirebaseActive = true;
-        }
-    } catch (e) {}
-
+    // --- 방명록: 구글 시트 "방명록" 탭에 저장, 모든 하객에게 보임 ---
+    // 참석 여부와 같은 Apps Script 주소를 사용합니다.
+    const GUESTBOOK_ENDPOINT = RSVP_ENDPOINT;
     let messages = [];
 
-    function initGuestbook() {
-        if (isFirebaseActive && db) {
-            db.ref('guestbook').on('value', (snapshot) => {
-                const data = snapshot.val();
-                messages = [];
-                if (data) {
-                    Object.keys(data).forEach(key => {
-                        messages.push({ id: key, ...data[key] });
-                    });
-                    messages.sort((a, b) => b.timestamp - a.timestamp);
-                }
-                renderMessages();
-            });
-        } else {
-            try { messages = JSON.parse(localStorage.getItem('wedding_guestbook')) || []; } catch (e) {}
+    function setGuestbookStatus(text) { document.getElementById('guestbookStatus').textContent = text; }
+
+    async function loadGuestbook() {
+        if (!GUESTBOOK_ENDPOINT) { setGuestbookStatus('방명록을 준비 중입니다.'); return; }
+        try {
+            const res = await fetch(GUESTBOOK_ENDPOINT + '?action=guestbook');
+            const json = await res.json();
+            if (json.result !== 'ok' || !Array.isArray(json.items)) throw new Error(json.message || '불러오기 실패');
+            messages = json.items;
             renderMessages();
+        } catch (err) {
+            console.log('방명록 불러오기 실패', err);
+            setGuestbookStatus('축하 메시지를 불러오지 못했어요. 잠시 후 새로고침 해주세요.');
         }
     }
 
+    // 하객이 쓴 글은 글자 그대로만 표시 (코드가 실행되지 않도록 textContent 사용)
     function renderMessages() {
         const list = document.getElementById('guestbookList');
-        if (!list) return;
         list.innerHTML = '';
-        messages.forEach((msg) => {
-            const div = document.createElement('div');
-            div.className = 'guest-msg-item';
-            div.innerHTML = `
-                <button class="btn-delete" onclick="deleteMessage('${msg.id || msg.timestamp}')">×</button>
-                <div class="guest-msg-header">
-                    <span class="guest-name">${msg.name}</span>
-                    <span class="guest-date">${msg.date}</span>
-                </div>
-                <div class="guest-text">${msg.text}</div>
-            `;
-            list.appendChild(div);
+        setGuestbookStatus(messages.length ? '' : '첫 번째 축하 메시지를 남겨주세요.');
+        messages.forEach(msg => {
+            const item = document.createElement('div');
+            item.className = 'guest-msg-item';
+
+            const del = document.createElement('button');
+            del.className = 'btn-delete';
+            del.type = 'button';
+            del.textContent = '×';
+            del.setAttribute('aria-label', msg.name + '님의 메시지 삭제');
+            del.onclick = () => deleteMessage(msg.id);
+
+            const header = document.createElement('div');
+            header.className = 'guest-msg-header';
+            const name = document.createElement('span');
+            name.className = 'guest-name';
+            name.textContent = msg.name;
+            const date = document.createElement('span');
+            date.className = 'guest-date';
+            date.textContent = msg.date;
+            header.append(name, date);
+
+            const text = document.createElement('div');
+            text.className = 'guest-text';
+            text.textContent = msg.text;
+
+            item.append(del, header, text);
+            list.appendChild(item);
         });
     }
 
-    function submitMessage() {
+    async function submitMessage() {
         const nameInput = document.getElementById('guestName');
         const pwdInput = document.getElementById('guestPwd');
         const msgInput = document.getElementById('guestMsg');
+        const btn = document.getElementById('guestSubmitBtn');
         const name = nameInput.value.trim();
         const pwd = pwdInput.value.trim();
         const text = msgInput.value.trim();
 
-        if(!name || !pwd || !text) return alert('이름, 비밀번호, 메시지를 모두 입력해주세요.');
+        if (!name || !pwd || !text) { showToast('이름, 비밀번호, 메시지를 모두 입력해주세요.'); return; }
+        if (!GUESTBOOK_ENDPOINT) { showToast('방명록을 준비 중입니다. 잠시 후 다시 시도해주세요.'); return; }
 
-        const today = new Date();
-        const dateString = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
-        const timestamp = Date.now();
-        const newMsg = { name, pwd, text, date: dateString, timestamp };
-
-        if (isFirebaseActive && db) {
-            db.ref('guestbook').push(newMsg)
-                .then(() => showToast('축하 메시지가 등록되었습니다.'))
-                .catch(() => alert('등록 중 오류가 발생했습니다.'));
-        } else {
-            messages.unshift({ id: timestamp, ...newMsg });
-            try { localStorage.setItem('wedding_guestbook', JSON.stringify(messages)); } catch (e) {}
+        btn.disabled = true;
+        btn.textContent = '등록하는 중...';
+        try {
+            const res = await fetch(GUESTBOOK_ENDPOINT, {
+                method: 'POST',
+                body: new URLSearchParams({ action: 'guestbook_add', name, pwd, text, website: document.getElementById('guestWebsite').value })
+            });
+            const json = await res.json();
+            if (json.result !== 'ok') throw new Error(json.message || '등록 실패');
+            if (json.item) { messages.unshift(json.item); renderMessages(); }
             showToast('축하 메시지가 등록되었습니다.');
-            renderMessages();
+            pwdInput.value = ''; msgInput.value = '';
+        } catch (err) {
+            console.log('방명록 등록 실패', err);
+            showToast('등록하지 못했어요. 잠시 후 다시 시도해주세요.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '등록하기';
         }
-
-        nameInput.value = ''; pwdInput.value = ''; msgInput.value = '';
     }
 
-    function deleteMessage(id) {
-        const targetMsg = messages.find(m => (m.id == id || m.timestamp == id));
-        if (!targetMsg) return;
-
-        const inputPwd = prompt('작성 시 입력한 비밀번호를 입력해주세요.');
-        if (inputPwd === null) return; 
-
-        if (inputPwd === targetMsg.pwd) {
-            if (isFirebaseActive && db && targetMsg.id) {
-                db.ref('guestbook/' + targetMsg.id).remove()
-                    .then(() => showToast('삭제되었습니다.'))
-                    .catch(() => alert('삭제 실패했습니다.'));
-            } else {
-                messages = messages.filter(m => (m.id != id && m.timestamp != id));
-                try { localStorage.setItem('wedding_guestbook', JSON.stringify(messages)); } catch (e) {}
-                renderMessages();
-                showToast('삭제되었습니다.');
-            }
-        } else { alert('비밀번호가 일치하지 않습니다.'); }
+    async function deleteMessage(id) {
+        const pwd = prompt('작성 시 입력한 비밀번호를 입력해주세요.');
+        if (pwd === null || !pwd.trim()) return;
+        try {
+            const res = await fetch(GUESTBOOK_ENDPOINT, {
+                method: 'POST',
+                body: new URLSearchParams({ action: 'guestbook_delete', id, pwd: pwd.trim() })
+            });
+            const json = await res.json();
+            if (json.result === 'wrong') { showToast('비밀번호가 일치하지 않습니다.'); return; }
+            if (json.result !== 'ok') throw new Error(json.message || '삭제 실패');
+            messages = messages.filter(m => m.id !== id);
+            renderMessages();
+            showToast('삭제되었습니다.');
+        } catch (err) {
+            console.log('방명록 삭제 실패', err);
+            showToast('삭제하지 못했어요. 잠시 후 다시 시도해주세요.');
+        }
     }
 
-    initGuestbook();
+    loadGuestbook();
 
     // --- 15장 갤러리 (3열 2줄 기본 배치 + 펼침/접힘 토글) ---
     const images = [
