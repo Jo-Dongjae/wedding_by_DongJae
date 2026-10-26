@@ -282,11 +282,7 @@
         .parents-info { font-size: 1.15rem; color: #1a1a1a; font-weight: 700; }
         .parent-row { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 12px; }
         .relation { font-size: 0.95rem; color: #777; font-weight: 400; margin: 0 5px; }
-        .btn-contact {
-            margin-top: 35px; padding: 12px 28px; background-color: #2b2b2b; border: 1px solid #2b2b2b; color: #ffffff; font-size: 0.9rem;
-            font-family: inherit; border-radius: 25px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;
-        }
-        .btn-contact:active { background-color: #4a4a4a; color: #fff; }
+        .btn-contact { margin-top: 35px; padding: 12px 28px; font-size: 0.9rem; }
 
         /* --- 3열 그리드 펼침/접힘 갤러리 --- */
         .gallery { padding: 80px 15px; background-color: #f8f8f8; text-align: center; } 
@@ -314,27 +310,7 @@
         }
 
         /* 사진 더보기/접기 버튼 */
-        .btn-gallery-more {
-            margin-top: 30px;
-            padding: 12px 32px;
-            background-color: #ffffff;
-            border: 1px solid #2b2b2b;
-            color: #2b2b2b;
-            font-size: 0.88rem;
-            font-family: inherit;
-            font-weight: 700;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        }
-        .btn-gallery-more:active {
-            background-color: #2b2b2b;
-            color: #ffffff;
-        }
+        .btn-gallery-more { margin-top: 30px; padding: 12px 32px; font-size: 0.88rem; }
 
         /* 달력 및 D-Day */
         .calendar-section { padding: 80px 20px; text-align: center; background-color: #ffffff; }
@@ -401,8 +377,7 @@
         /* 참석 여부 (RSVP) */
         .rsvp-section { padding: 80px 20px; text-align: center; background-color: #ffffff; }
         .rsvp-desc { font-size: 0.95rem; color: #555; margin-bottom: 30px; line-height: 1.8; word-break: keep-all; }
-        .btn-rsvp-open { padding: 15px 36px; background-color: #2b2b2b; color: #ffffff; border: 1px solid #2b2b2b; border-radius: 30px; font-size: 0.95rem; font-family: inherit; font-weight: bold; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15); transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-rsvp-open:active { background-color: #4a4a4a; transform: scale(0.98); }
+        .btn-rsvp-open { padding: 14px 36px; font-size: 0.95rem; }
         .rsvp-modal-content { background-color: #ffffff; width: 88%; max-width: 380px; padding: 30px 20px; border-radius: 12px; position: relative; text-align: left; border: 1px solid #2b2b2b; color: #2c2c2c; }
         .rsvp-modal-title { font-size: 1.15rem; color: #1a1a1a; text-align: center; margin-bottom: 22px; font-weight: 700; }
         .form-group { margin-bottom: 18px; }
@@ -410,23 +385,29 @@
         .radio-group { display: flex; gap: 15px; }
         .radio-label { font-size: 0.9rem; color: #555; display: flex; align-items: center; gap: 6px; cursor: pointer; }
         .rsvp-input, .rsvp-select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 0.9rem; outline: none; background: #fafafa; color: #222; }
-        .btn-rsvp-submit { width: 100%; padding: 14px; background-color: #2b2b2b; color: #ffffff; border: none; border-radius: 4px; font-family: inherit; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; }
-        .btn-rsvp-submit:active { background-color: #4a4a4a; }
+        /* 팝업 안의 최종 버튼(등록·전달)은 눈에 띄게 진한 색, 모양은 다른 버튼과 같은 둥근 알약 */
+        .btn-rsvp-submit { width: 100%; padding: 14px; background-color: #2b2b2b; color: #ffffff; border: none; border-radius: 30px; font-family: inherit; font-weight: bold; font-size: 1rem; letter-spacing: 0.06em; cursor: pointer; margin-top: 10px; transition: transform 0.15s ease; }
+        .btn-rsvp-submit:active { background-color: #4a4a4a; transform: scale(0.98); }
 
         /* 계좌번호 */
         .account-section { padding: 80px 20px; text-align: center; background-color: #f8f8f8; }
         .account-desc { font-size: 0.95rem; color: #555; margin-bottom: 30px; line-height: 1.8; }
         .accordion-wrapper { max-width: 360px; margin: 0 auto; text-align: left; }
         .accordion { margin-bottom: 15px; }
-        .accordion-btn { width: 100%; padding: 16px 20px; background-color: #ffffff; border: 1px solid #2b2b2b; border-radius: 4px; font-size: 1rem; color: #1a1a1a; font-family: inherit; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .accordion-content { display: none; padding: 15px 20px; background-color: #ffffff; border: 1px solid #2b2b2b; border-top: none; border-radius: 0 0 4px 4px; }
+        /* 계좌번호: 검정 테두리 네모 대신 둥근 흰 카드 (열리면 아래로 이어짐) */
+        .accordion { border-radius: 16px; background: #ffffff; border: 1px solid #e2e2e2; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05); overflow: hidden; }
+        .accordion-btn { width: 100%; padding: 16px 20px; background: transparent; border: none; font-size: 1rem; color: #1a1a1a; font-family: inherit; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; align-items: center; -webkit-tap-highlight-color: transparent; }
+        .accordion-btn span { color: #999999; font-size: 0.85rem; transition: transform 0.2s ease; }
+        .accordion:has(.accordion-content.show) .accordion-btn span { transform: rotate(180deg); }
+        .accordion-content { display: none; padding: 4px 20px 12px; background: transparent; border-top: 1px solid #eeeeee; }
         .accordion-content.show { display: block; }
         .account-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed #e0e0e0; }
         .account-item:last-child { border-bottom: none; }
         .account-info { display: flex; flex-direction: column; gap: 4px; }
         .bank-details { font-size: 0.95rem; color: #1a1a1a; font-weight: 700; font-variant-numeric: tabular-nums; }
         .account-holder { font-size: 0.85rem; color: #666; }
-        .btn-copy-acc { padding: 6px 12px; background-color: #2b2b2b; border: 1px solid #2b2b2b; border-radius: 4px; font-size: 0.8rem; color: #ffffff; font-family: inherit; cursor: pointer; white-space: nowrap; }
+        .btn-copy-acc { padding: 6px 14px; background-color: #f1f1f1; border: 1px solid #cfcfcf; border-radius: 20px; font-size: 0.8rem; color: #2b2b2b; font-family: inherit; cursor: pointer; white-space: nowrap; transition: background 0.2s ease; -webkit-tap-highlight-color: transparent; }
+        .btn-copy-acc:active { background-color: #e6e6e6; }
 
         /* 방명록 */
         .guestbook-section { padding: 80px 20px; text-align: center; background-color: #ffffff; }
@@ -458,13 +439,19 @@
         .gb-names { font-family: 'Cormorant Garamond', serif; font-size: 0.92rem; font-weight: 600; letter-spacing: 0.08em; line-height: 1.35; color: #333333; }
         .gb-amp { font-family: 'Gowun Batang', serif; font-size: 0.85em; }
         .gb-hint { margin-top: 14px; font-size: 0.8rem; color: #999999; }
-        .gb-write-btn {
-            margin: 34px 0 48px; padding: 14px 44px;
-            background: #f1f1f1; border: 1px solid #bdbdbd; border-radius: 30px;
-            font-family: inherit; font-size: 0.95rem; letter-spacing: 0.12em; color: #2b2b2b; cursor: pointer;
+        .gb-write-btn { margin: 34px 0 48px; padding: 14px 44px; font-size: 0.95rem; letter-spacing: 0.12em; }
+
+        /* --- 버튼 공통 스타일: 편지지 배경에 어울리는 부드러운 연회색 알약 --- */
+        .gb-write-btn, .btn-contact, .btn-rsvp-open, .btn-gallery-more, .btn-share-link {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            background: #f1f1f1; border: 1px solid #bdbdbd; border-radius: 30px; box-shadow: none;
+            font-family: inherit; font-weight: 400; color: #2b2b2b; cursor: pointer;
             transition: background 0.2s ease, transform 0.15s ease; -webkit-tap-highlight-color: transparent;
         }
-        .gb-write-btn:active { background: #e6e6e6; transform: scale(0.97); }
+        .btn-contact, .btn-rsvp-open, .btn-gallery-more { letter-spacing: 0.06em; }
+        .gb-write-btn:active, .btn-contact:active, .btn-rsvp-open:active, .btn-gallery-more:active, .btn-share-link:active {
+            background: #e6e6e6; color: #2b2b2b; transform: scale(0.97);
+        }
 
         /* 축하 메시지 쓰기 팝업 */
         .guest-modal-content .form-help { font-weight: 400; font-size: 0.8rem; color: #999999; }
@@ -545,9 +532,10 @@
         /* 공유하기 & 푸터 */
         .share-section { padding: 60px 20px; text-align: center; background-color: #f8f8f8; }
         .share-buttons { display: flex; gap: 12px; justify-content: center; max-width: 360px; margin: 0 auto; }
-        .btn-share { flex: 1; padding: 14px 0; border-radius: 6px; border: none; font-size: 0.9rem; font-family: inherit; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-share-kakao { background-color: #FEE500; color: #191919; }
-        .btn-share-link { background-color: #2b2b2b; border: 1px solid #2b2b2b; color: #ffffff; }
+        .btn-share { flex: 1; padding: 14px 0; border-radius: 30px; border: none; font-size: 0.9rem; font-family: inherit; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        /* 카카오톡 버튼은 카카오 공식 노란색 유지, 모양만 둥근 알약으로 */
+        .btn-share-kakao { background-color: #FEE500; color: #191919; border: 1px solid #FEE500; }
+        .btn-share-link { display: flex; font-weight: bold; border: 1px solid #bdbdbd; }
         .footer-copyright { margin-top: 40px; font-size: 0.75rem; color: #888; letter-spacing: 1px; }
 
         /* --- 전체 배경: 결이 있는 두꺼운 편지지 질감 (롤링페이퍼와 같은 종이) --- */
