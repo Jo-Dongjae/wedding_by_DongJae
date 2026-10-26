@@ -271,7 +271,14 @@
         .greeting { text-align: center; padding: 20px 20px 80px; position: relative; z-index: 3; background-color: #ffffff; }
         .greeting-divider { width: 1px; height: 40px; background-color: #2b2b2b; margin: 0 auto 25px; }
         .greeting-text { font-size: 1rem; color: #444; line-height: 2.2; margin-top: 30px; }
-        .parents-divider { width: 40px; height: 1px; background-color: #2b2b2b; margin: 45px auto 40px; }
+        /* 인사말과 혼주·연락하기 사이: 구역 구분선과 같은 모양 (— · —) */
+        .parents-divider {
+            width: 72px; height: 5px; margin: 45px auto 40px;
+            background:
+                radial-gradient(circle, #a8a8a8 0 1.6px, transparent 2px) center / 5px 5px no-repeat,
+                linear-gradient(#cfcfcf, #cfcfcf) left center / 30px 1px no-repeat,
+                linear-gradient(#cfcfcf, #cfcfcf) right center / 30px 1px no-repeat;
+        }
         .parents-info { font-size: 1.15rem; color: #1a1a1a; font-weight: 700; }
         .parent-row { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 12px; }
         .relation { font-size: 0.95rem; color: #777; font-weight: 400; margin: 0 5px; }
