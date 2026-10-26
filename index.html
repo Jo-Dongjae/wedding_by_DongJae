@@ -418,22 +418,117 @@
 
         /* 방명록 */
         .guestbook-section { padding: 80px 20px; text-align: center; background-color: #ffffff; }
-        .guestbook-form { max-width: 360px; margin: 0 auto 30px; text-align: left; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
-        .input-group input { width: 100%; flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 0.9rem; outline: none; background: #fafafa; color: #222; }
-        .guestbook-form textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 0.95rem; resize: none; margin-bottom: 10px; outline: none; background: #fafafa; color: #222; }
-        .btn-submit { width: 100%; padding: 14px; background-color: #2b2b2b; color: #ffffff; border: none; border-radius: 4px; font-family: inherit; font-weight: bold; cursor: pointer; font-size: 1rem; }
-        .guestbook-list { max-width: 360px; margin: 0 auto; text-align: left; max-height: 400px; overflow-y: auto; }
-        .guest-msg-item { background: #f8f8f8; padding: 18px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #e5e5e5; position: relative; }
-        .guest-msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .guest-name { font-weight: 700; color: #1a1a1a; font-size: 0.95rem; }
-        .guest-date { color: #888; font-size: 0.8rem; }
-        .guest-text { font-size: 0.95rem; color: #444; white-space: pre-wrap; word-break: break-all; line-height: 1.6; }
-        .btn-delete { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #999; cursor: pointer; font-size: 1.2rem; }
-        .guest-msg-item .guest-msg-header { padding-right: 22px; }
-        .guestbook-status { font-size: 0.88rem; color: #888; margin: 0 auto 16px; }
+        .btn-rsvp-submit:disabled { opacity: 0.6; cursor: default; }
+
+        /* 축하 메시지: 실사 편지봉투 (배경 없이 봉투만) + 봉투 위 글씨 + 쓰기 버튼 */
+        .gb-envelope-desc { margin: 0 0 30px; font-size: 1rem; color: #444444; word-break: keep-all; }
+        .gb-envelope {
+            position: relative; width: 88%; max-width: 340px; margin: 0 auto;
+            aspect-ratio: 667 / 460; cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 8px 20px rgba(0, 0, 0, 0.10);
+            transition: transform 0.2s ease; -webkit-tap-highlight-color: transparent;
+        }
+        .gb-envelope:active { transform: scale(0.98); }
+        /* 검은 배경 사진에서 봉투 부분만 정확히 잘라냄 + 누런 기를 빼서 흰 봉투로 */
+        .gb-envelope-photo {
+            position: absolute; inset: 0;
+            background: #f2f2f2 url('https://images.unsplash.com/photo-1649019489428-70f505daacd6?auto=format&fit=max&w=1000&q=80') no-repeat;
+            background-size: 149.93% auto;
+            background-position: 50.75% 49.41%;
+            filter: saturate(0) brightness(1.08) contrast(1.02);
+        }
+        /* 봉투 아래쪽(V자 덮개 아래 빈 곳)에 작게 */
+        .gb-envelope-text {
+            position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+            gap: 5px; padding: 0 8% 9%; text-align: center; pointer-events: none;
+        }
+        .gb-with { font-family: 'Cormorant Garamond', serif; font-size: 0.58rem; font-weight: 600; letter-spacing: 0.4em; color: #666666; padding-left: 0.4em; }
+        .gb-names { font-family: 'Cormorant Garamond', serif; font-size: 0.92rem; font-weight: 600; letter-spacing: 0.08em; line-height: 1.35; color: #333333; }
+        .gb-amp { font-family: 'Gowun Batang', serif; font-size: 0.85em; }
+        .gb-hint { margin-top: 14px; font-size: 0.8rem; color: #999999; }
+        .gb-write-btn {
+            margin: 34px 0 48px; padding: 14px 44px;
+            background: #f1f1f1; border: 1px solid #bdbdbd; border-radius: 30px;
+            font-family: inherit; font-size: 0.95rem; letter-spacing: 0.12em; color: #2b2b2b; cursor: pointer;
+            transition: background 0.2s ease, transform 0.15s ease; -webkit-tap-highlight-color: transparent;
+        }
+        .gb-write-btn:active { background: #e6e6e6; transform: scale(0.97); }
+
+        /* 축하 메시지 쓰기 팝업 */
+        .guest-modal-content .form-help { font-weight: 400; font-size: 0.8rem; color: #999999; }
+        .guest-textarea { resize: none; line-height: 1.6; }
+        .guest-count { display: block; text-align: right; margin-top: 4px; font-size: 0.75rem; color: #aaaaaa; font-variant-numeric: tabular-nums; }
+
+        /* --- 롤링페이퍼: 봉투를 누르면 열리는 실사 편지지 한 장에 하객들의 손글씨 --- */
+        /* 편지지 맨 위 제목 */
+        .rp-title {
+            position: relative; font-family: 'Nanum Pen Script', 'Gowun Batang', cursive; font-size: 2.1rem; color: #2b2b2b;
+            text-align: center; line-height: 1; margin: 0 0 24px;
+        }
+        /* 왼쪽 → 오른쪽 → 왼쪽 → 오른쪽 순서로 번갈아 적힘 (두 줄 기둥) */
+        .rp-notes { position: relative; display: flex; gap: 18px; align-items: flex-start; }
+        .rp-col { flex: 1; min-width: 0; }
+        .rp-note {
+            position: relative; display: block; width: 100%;
+            padding: 8px 6px 10px; margin-bottom: 16px;
+            font-family: 'Nanum Pen Script', 'Gowun Batang', cursive;
+            transform: rotate(var(--tilt, 0deg));
+        }
+        .rp-text { font-size: 1.55rem; line-height: 1.3; white-space: pre-wrap; word-break: break-word; color: var(--ink, #2b2b2b); }
+        .rp-from { display: block; margin-top: 4px; text-align: right; font-size: 1.3rem; color: var(--ink, #2b2b2b); opacity: 0.85; }
+        .rp-date { display: block; text-align: right; font-family: 'Cormorant Garamond', serif; font-size: 0.8rem; color: #9a9a9a; font-variant-numeric: lining-nums; }
+        .rp-note .btn-delete {
+            position: absolute; top: 0; right: -2px; padding: 2px 4px; background: none; border: none;
+            color: #bdbdbd; cursor: pointer; font-size: 1.05rem; line-height: 1;
+        }
+        /* 방금 남긴 글은 위에서부터 손으로 쓰듯 나타남 */
+        .rp-note.writing .rp-text, .rp-note.writing .rp-from { animation: rpWrite 1.4s cubic-bezier(0.4, 0.1, 0.4, 1) both; }
+        .rp-note.writing .rp-from { animation-delay: 0.9s; animation-duration: 0.6s; }
+        @keyframes rpWrite {
+            from { clip-path: inset(0 0 100% 0); }
+            to   { clip-path: inset(-10% -10% -10% -10%); }
+        }
+        @media (prefers-reduced-motion: reduce) { .rp-note.writing .rp-text, .rp-note.writing .rp-from { animation: none; } }
+
+        .guestbook-status {
+            position: relative; font-family: 'Nanum Pen Script', 'Gowun Batang', cursive; font-size: 1.5rem; color: #8a8a8a;
+            text-align: center; margin: 30px 0 40px; white-space: pre-line; line-height: 1.4;
+        }
         .guestbook-status:empty { display: none; }
-        .btn-submit:disabled { opacity: 0.6; cursor: default; }
+
+        /* 롤링페이퍼 창 */
+        .rp-modal {
+            display: none; position: fixed; inset: 0; z-index: 9998;
+            background: rgba(20, 20, 20, 0.72);
+            align-items: center; justify-content: center; padding: 56px 14px 20px;
+        }
+        .rp-modal.open { display: flex; }
+        .rp-modal-inner { position: relative; width: 100%; max-width: 480px; display: flex; flex-direction: column; align-items: center; }
+        /* 접혀 있던 편지지가 위에서부터 펼쳐지듯 열림 */
+        .rp-modal.open .rp-modal-inner { transform-origin: 50% 0; animation: rpUnfold 0.6s cubic-bezier(0.2, 0.8, 0.25, 1); }
+        @keyframes rpUnfold {
+            0%   { transform: translateY(24px) scaleY(0.12); opacity: 0; }
+            45%  { opacity: 1; }
+            100% { transform: none; opacity: 1; }
+        }
+        .rp-scroll {
+            width: 100%; max-height: calc(100vh - 170px); max-height: calc(100dvh - 170px);
+            overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18), 0 18px 40px rgba(0, 0, 0, 0.35);
+        }
+        /* 실사 편지지: 결이 있는 두꺼운 종이 사진 (누런 기는 빼서 흰 종이로) */
+        .rp-paper { position: relative; min-height: 100%; padding: 40px 22px 30px; text-align: left; background: #f7f7f6; }
+        .rp-paper::before {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background: url('https://images.unsplash.com/photo-1601662528567-526cd06f6582?auto=format&fit=crop&w=1000&q=80') center top / 100% auto repeat-y;
+            filter: saturate(0) brightness(1.05);
+        }
+        .rp-modal-close {
+            position: absolute; top: -46px; right: 0; width: 38px; height: 38px;
+            background: none; border: none; color: #ffffff; font-size: 2.1rem; line-height: 1; cursor: pointer;
+        }
+        .rp-write-btn { margin: 16px 0 0; background: #ffffff; border-color: #ffffff; }
+        @media (prefers-reduced-motion: reduce) { .rp-modal.open .rp-modal-inner { animation: none; } }
 
         /* 공유하기 & 푸터 */
         .share-section { padding: 60px 20px; text-align: center; background-color: #f8f8f8; }
@@ -881,19 +976,19 @@
             GUESTBOOK
         </p>
         
-        <div class="guestbook-form">
-            <div class="input-group">
-                <input type="text" id="guestName" placeholder="이름" maxlength="10">
-                <input type="password" id="guestPwd" placeholder="비밀번호" maxlength="10">
-            </div>
-            <textarea id="guestMsg" rows="3" placeholder="축하 메시지를 남겨주세요." maxlength="200"></textarea>
-            <!-- 자동 스팸 방지용 숨은 칸 (사람에게는 보이지 않음) -->
-            <input type="text" id="guestWebsite" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;">
-            <button class="btn-submit" id="guestSubmitBtn" onclick="submitMessage()">등록하기</button>
-        </div>
+        <p class="gb-envelope-desc">오래도록 간직할 축하의 한마디를 남겨주세요.</p>
 
-        <p class="guestbook-status" id="guestbookStatus">축하 메시지를 불러오는 중입니다...</p>
-        <div class="guestbook-list" id="guestbookList"></div>
+        <!-- 실사 편지봉투 (사진에서 봉투만 잘라 사용) + 봉투 위 글씨. 누르면 롤링페이퍼가 열려 축하 메시지를 읽을 수 있음 -->
+        <div class="gb-envelope" onclick="openRpModal()" role="button" tabindex="0" aria-label="축하 메시지 읽기">
+            <div class="gb-envelope-photo" aria-hidden="true"></div>
+            <div class="gb-envelope-text">
+                <span class="gb-with">WITH LOVE,</span>
+                <span class="gb-names">JO DONGJAE <span class="gb-amp">&amp;</span><br>KIM HYERYEUNG</span>
+            </div>
+        </div>
+        <p class="gb-hint" id="gbHint">봉투를 눌러 축하 메시지를 읽어보세요</p>
+
+        <button type="button" class="gb-write-btn" onclick="openGuestModal()">축하 메시지 남기기</button>
     </section>
 
     <!-- 공유하기 -->
@@ -1011,6 +1106,47 @@
             <input type="text" name="website" id="rsvpWebsite" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;">
             <button type="submit" class="btn-rsvp-submit" id="rsvpSubmitBtn">참석 의사 전달하기</button>
         </form>
+    </div>
+</div>
+
+<!-- 축하 메시지 쓰기 팝업 -->
+<div id="guestModal" class="modal" onclick="closeGuestModal()">
+    <div class="rsvp-modal-content guest-modal-content" onclick="event.stopPropagation()">
+        <span class="modal-close" style="color:#2b2b2b; top:15px; right:20px;" onclick="closeGuestModal()">&times;</span>
+        <h3 class="rsvp-modal-title">축하 메시지 남기기</h3>
+        <form id="guestForm" onsubmit="event.preventDefault(); submitMessage();">
+            <div class="form-group">
+                <label class="form-label" for="guestName">이름</label>
+                <input type="text" class="rsvp-input" id="guestName" placeholder="이름을 입력해주세요" maxlength="10">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="guestPwd">비밀번호 <span class="form-help">(글을 지울 때 필요해요)</span></label>
+                <input type="password" class="rsvp-input" id="guestPwd" placeholder="비밀번호" maxlength="10" autocomplete="new-password">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="guestMsg">축하 메시지</label>
+                <textarea class="rsvp-input guest-textarea" id="guestMsg" rows="5" placeholder="두 사람에게 축하의 한마디를 남겨주세요." maxlength="200" oninput="updateGuestCount()"></textarea>
+                <span class="guest-count" id="guestCount">0 / 200</span>
+            </div>
+            <!-- 자동 스팸 방지용 숨은 칸 (사람에게는 보이지 않음) -->
+            <input type="text" id="guestWebsite" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;">
+            <button type="submit" class="btn-rsvp-submit" id="guestSubmitBtn">등록하기</button>
+        </form>
+    </div>
+</div>
+
+<!-- 롤링페이퍼 크게 보기 -->
+<div class="rp-modal" id="rpModal" onclick="closeRpModal()">
+    <div class="rp-modal-inner" onclick="event.stopPropagation()">
+        <button type="button" class="rp-modal-close" onclick="closeRpModal()" aria-label="닫기">&times;</button>
+        <div class="rp-scroll" id="rpScroll">
+            <div class="rp-paper">
+                <p class="rp-title">To. 동재 ♡ 혜령</p>
+                <p class="guestbook-status" id="guestbookStatus">축하 메시지를 불러오는 중이에요...</p>
+                <div class="rp-notes" id="rpModalNotes"></div>
+            </div>
+        </div>
+        <button type="button" class="gb-write-btn rp-write-btn" onclick="closeRpModal(); openGuestModal();">축하 메시지 남기기</button>
     </div>
 </div>
 
@@ -1513,7 +1649,8 @@
             const res = await fetch(GUESTBOOK_ENDPOINT + '?action=guestbook');
             const json = await res.json();
             if (json.result !== 'ok' || !Array.isArray(json.items)) throw new Error(json.message || '불러오기 실패');
-            messages = json.items;
+            // 시트는 최신 글부터 보내주므로 뒤집어서, 먼저 쓴 글이 편지지 앞쪽에 오도록
+            messages = json.items.slice().reverse();
             renderMessages();
         } catch (err) {
             console.log('방명록 불러오기 실패', err);
@@ -1521,40 +1658,116 @@
         }
     }
 
-    // 하객이 쓴 글은 글자 그대로만 표시 (코드가 실행되지 않도록 textContent 사용)
-    function renderMessages() {
-        const list = document.getElementById('guestbookList');
-        list.innerHTML = '';
-        setGuestbookStatus(messages.length ? '' : '첫 번째 축하 메시지를 남겨주세요.');
-        messages.forEach(msg => {
-            const item = document.createElement('div');
-            item.className = 'guest-msg-item';
+    // --- 롤링페이퍼 그리기 ---
+    let rpJustWrittenId = null;        // 방금 쓴 글은 손글씨로 써지는 효과
+    const RP_INKS = ['#2b2b2b', '#2f4a6d', '#6b3a3f', '#3d5a47', '#5a4a6b']; // 검정·남색·버건디·초록·보라 펜
 
+    // 글마다 항상 같은 기울기·펜 색이 나오도록 ID로 계산
+    function rpSeed(id) {
+        let h = 0;
+        for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+        return Math.abs(h);
+    }
+
+
+    // 글 한 개 만들기 (하객이 쓴 글은 글자 그대로만 표시 → 코드가 실행되지 않도록 textContent 사용)
+    function buildNote(msg, deletable) {
+        const seed = rpSeed(String(msg.id));
+        const note = document.createElement('div');
+        note.className = 'rp-note' + (deletable && msg.id === rpJustWrittenId ? ' writing' : '');
+        note.style.setProperty('--tilt', ((seed % 7) - 3) * 0.7 + 'deg');
+        note.style.setProperty('--ink', RP_INKS[seed % RP_INKS.length]);
+
+        if (deletable) {
             const del = document.createElement('button');
             del.className = 'btn-delete';
             del.type = 'button';
             del.textContent = '×';
             del.setAttribute('aria-label', msg.name + '님의 메시지 삭제');
-            del.onclick = () => deleteMessage(msg.id);
+            // 삭제 버튼을 눌렀을 때는 편지지 크게 보기가 열리지 않도록
+            del.onclick = (e) => { e.stopPropagation(); deleteMessage(msg.id); };
+            note.appendChild(del);
+        }
 
-            const header = document.createElement('div');
-            header.className = 'guest-msg-header';
-            const name = document.createElement('span');
-            name.className = 'guest-name';
-            name.textContent = msg.name;
-            const date = document.createElement('span');
-            date.className = 'guest-date';
-            date.textContent = msg.date;
-            header.append(name, date);
+        const text = document.createElement('div');
+        text.className = 'rp-text';
+        text.textContent = msg.text;
 
-            const text = document.createElement('div');
-            text.className = 'guest-text';
-            text.textContent = msg.text;
+        const from = document.createElement('span');
+        from.className = 'rp-from';
+        from.textContent = 'from. ' + msg.name;
 
-            item.append(del, header, text);
-            list.appendChild(item);
-        });
+        const date = document.createElement('span');
+        date.className = 'rp-date';
+        date.textContent = msg.date;
+
+        note.append(text, from, date);
+        return note;
     }
+
+    // 왼쪽 → 오른쪽 → 왼쪽 → 오른쪽 순서로 두 기둥에 번갈아 넣기 (먼저 쓴 글이 왼쪽 위, 새 글은 맨 뒤)
+    function fillNotes(container, list, deletable) {
+        container.innerHTML = '';
+        const cols = [document.createElement('div'), document.createElement('div')];
+        cols.forEach(c => { c.className = 'rp-col'; container.appendChild(c); });
+        list.forEach((msg, i) => cols[i % 2].appendChild(buildNote(msg, deletable)));
+    }
+
+    // 롤링페이퍼(봉투를 눌러 여는 창)에 모든 글을 그림
+    function renderMessages() {
+        setGuestbookStatus(messages.length ? '' : '아직 도착한 편지가 없어요.\n첫 번째 축하 메시지를 남겨주세요 :)');
+        fillNotes(document.getElementById('rpModalNotes'), messages, true);
+        updateEnvelopeHint();
+        rpJustWrittenId = null;
+    }
+
+    // 봉투 아래 안내: 도착한 축하 메시지 개수
+    function updateEnvelopeHint() {
+        document.getElementById('gbHint').textContent = messages.length
+            ? `봉투를 눌러 ${messages.length}통의 축하 메시지를 읽어보세요`
+            : '봉투를 눌러 축하 메시지를 읽어보세요';
+    }
+
+    // --- 축하 메시지 쓰기 팝업 ---
+    function openGuestModal() {
+        document.getElementById('guestModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        updateGuestCount();
+        const nameInput = document.getElementById('guestName');
+        // 이름이 이미 채워져 있으면(봉투에 적은 이름) 바로 메시지 칸으로
+        setTimeout(() => (nameInput.value ? document.getElementById('guestMsg') : nameInput).focus(), 50);
+    }
+    function closeGuestModal() {
+        document.getElementById('guestModal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    function updateGuestCount() {
+        document.getElementById('guestCount').textContent = document.getElementById('guestMsg').value.length + ' / 200';
+    }
+    document.querySelector('.gb-envelope').addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openRpModal(); }
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('guestModal').style.display === 'flex') closeGuestModal();
+    });
+
+    // --- 롤링페이퍼 열기 (봉투를 누르면 편지지가 펼쳐지며 축하 메시지가 보임) ---
+    function openRpModal() {
+        renderMessages();
+        const modal = document.getElementById('rpModal');
+        modal.classList.remove('open');
+        void modal.offsetWidth; // 열 때마다 펼쳐지는 효과가 다시 나오도록
+        modal.classList.add('open');
+        document.getElementById('rpScroll').scrollTop = 0;
+        document.body.style.overflow = 'hidden';
+    }
+    function closeRpModal() {
+        document.getElementById('rpModal').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('rpModal').classList.contains('open')) closeRpModal();
+    });
 
     async function submitMessage() {
         const nameInput = document.getElementById('guestName');
@@ -1577,9 +1790,17 @@
             });
             const json = await res.json();
             if (json.result !== 'ok') throw new Error(json.message || '등록 실패');
-            if (json.item) { messages.unshift(json.item); renderMessages(); }
-            showToast('축하 메시지가 등록되었습니다.');
-            pwdInput.value = ''; msgInput.value = '';
+            closeGuestModal();
+            if (json.item) {
+                // 새 글은 롤링페이퍼 맨 뒤에 이어서 써짐 → 롤링페이퍼를 열어 내 글이 써지는 모습을 보여줌
+                messages.push(json.item);
+                rpJustWrittenId = json.item.id;
+                openRpModal();
+                const mine = document.querySelector('#rpModalNotes .rp-note.writing');
+                if (mine) setTimeout(() => mine.scrollIntoView({ behavior: 'smooth', block: 'center' }), 450);
+            }
+            showToast('축하 메시지가 롤링페이퍼에 남겨졌어요.');
+            pwdInput.value = ''; msgInput.value = ''; updateGuestCount();
         } catch (err) {
             console.log('방명록 등록 실패', err);
             showToast('등록하지 못했어요. 잠시 후 다시 시도해주세요.');
