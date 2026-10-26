@@ -463,7 +463,7 @@
         /* ============================================================
            오프닝 전환 연출
            편지 → 화면 가득 확대 → 빛이 번지며 → 사진 초점이 맞고
-           → 이름이 한 글자씩 떠오르고 → 하트가 그려지고 → 꽃잎이 내림
+           → 이름이 한 글자씩 떠오르고 → 하트가 그려지고 → 눈이 내림
            ============================================================ */
         /* 봉투는 크기 그대로 서서히 사라지고, 편지지만 앞으로 다가오듯 확대 */
         #envelopeOverlay.zoom .env-back,
@@ -504,7 +504,7 @@
             to   { clip-path: inset(-20% -10% -20% 0); }
         }
 
-        #petalCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+        #snowCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
 
         /* 움직임 줄이기 설정을 켠 기기: 연출을 짧게 하거나 생략 */
         @media (prefers-reduced-motion: reduce) {
@@ -605,7 +605,7 @@
 
 <!-- BGM 오디오 & 컨트롤 버튼 -->
 <audio id="bgmAudio" loop preload="auto">
-    <source src="wedding_bgm1.mp3" type="audio/mpeg">
+    <source src="wedding_bgm2.mp3" type="audio/mpeg">
 </audio>
 <div class="bgm-btn" id="bgmBtn" onclick="toggleBgm()" title="배경음악 재생/일시정지">
     <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
@@ -615,7 +615,7 @@
     <!-- 메인 커버 -->
     <section class="main-cover">
         <div class="cover-bg"></div>
-        <canvas id="petalCanvas"></canvas>
+        <canvas id="snowCanvas" aria-hidden="true"></canvas>
         
         <div class="cover-text-bottom">
             <h1 class="cover-names">
@@ -999,60 +999,122 @@
         im.src = "https://images.unsplash.com/photo-1519741497674-611481863552?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
     });
 
-    // --- 꽃잎 효과 (커버가 열릴 때 한 번 흩날림) ---
+    // --- 눈 내리는 효과 (커버가 열리면 시작, 커버가 화면에 보일 때만 계속 내림) ---
     (function () {
-        const cv = document.getElementById('petalCanvas');
+        const cv = document.getElementById('snowCanvas');
         if (!cv) return;
         const ctx = cv.getContext('2d');
-        const petals = [];
-        let running = false;
+        const flakes = [];
+        let W = 0, H = 0, started = false, running = false, coverVisible = true, last = 0;
 
-        function resize() { cv.width = cv.offsetWidth; cv.height = cv.offsetHeight; }
+        function resize() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            W = cv.offsetWidth; H = cv.offsetHeight;
+            cv.width = W * dpr; cv.height = H * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
         window.addEventListener('resize', resize);
-        resize();
 
-        function frame() {
-            ctx.clearRect(0, 0, cv.width, cv.height);
-            for (let i = petals.length - 1; i >= 0; i--) {
-                const p = petals[i];
-                p.y += p.vy; p.phase += p.sway; p.flip += 0.04; p.rot += p.vr;
-                p.x += Math.sin(p.phase) * 0.6 + p.vx;
-                if (p.y > cv.height + 20) { petals.splice(i, 1); continue; }
-                const sz = p.size;
-                ctx.save();
-                ctx.translate(p.x, p.y); ctx.rotate(p.rot);
-                ctx.scale(0.45 + 0.55 * Math.abs(Math.cos(p.flip)), 1);
-                ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
-                ctx.beginPath();
-                ctx.moveTo(0, -sz);
-                ctx.bezierCurveTo(sz * 0.9, -sz * 0.6, sz * 0.7, sz * 0.6, 0, sz);
-                ctx.bezierCurveTo(-sz * 0.7, sz * 0.6, -sz * 0.9, -sz * 0.6, 0, -sz);
-                ctx.fill();
-                ctx.restore();
+        // 눈 결정체 그림 3종을 미리 한 번 그려두고 재사용 (휴대폰에서도 가볍게)
+        const SPRITE = 64, C = SPRITE / 2, R = 26;
+        function makeCrystalSprite(drawArm) {
+            const s = document.createElement('canvas');
+            s.width = s.height = SPRITE;
+            const g = s.getContext('2d');
+            g.translate(C, C);
+            g.strokeStyle = '#ffffff'; g.fillStyle = '#ffffff';
+            g.lineWidth = 4.2; g.lineCap = 'round'; g.lineJoin = 'round';
+            g.shadowColor = 'rgba(255,255,255,0.7)'; g.shadowBlur = 3;
+            for (let k = 0; k < 6; k++) {
+                g.save(); g.rotate((Math.PI / 3) * k);
+                g.beginPath(); drawArm(g); g.stroke();
+                g.restore();
             }
-            if (petals.length || spawning) requestAnimationFrame(frame); else running = false;
+            return s;
+        }
+        const crystalSprites = [
+            // ① 가지가 두 쌍 뻗은 기본 결정
+            makeCrystalSprite(g => {
+                g.moveTo(0, 0); g.lineTo(0, -R);
+                g.moveTo(0, -R * 0.42); g.lineTo(-R * 0.26, -R * 0.62); g.moveTo(0, -R * 0.42); g.lineTo(R * 0.26, -R * 0.62);
+                g.moveTo(0, -R * 0.7); g.lineTo(-R * 0.18, -R * 0.84); g.moveTo(0, -R * 0.7); g.lineTo(R * 0.18, -R * 0.84);
+            }),
+            // ② 끝이 V자로 갈라진 결정 + 가운데 작은 육각
+            makeCrystalSprite(g => {
+                g.moveTo(0, -R * 0.24); g.lineTo(0, -R * 0.82);
+                g.moveTo(0, -R * 0.82); g.lineTo(-R * 0.2, -R); g.moveTo(0, -R * 0.82); g.lineTo(R * 0.2, -R);
+                g.moveTo(0, -R * 0.24); g.lineTo(R * 0.21, -R * 0.12);
+            }),
+            // ③ 넓은 잎 모양 가지가 하나씩 있는 결정
+            makeCrystalSprite(g => {
+                g.moveTo(0, 0); g.lineTo(0, -R);
+                g.moveTo(-R * 0.3, -R * 0.38); g.lineTo(0, -R * 0.62); g.lineTo(R * 0.3, -R * 0.38);
+            })
+        ];
+
+        function makeFlake(fromTop) {
+            const layer = Math.random();
+            // 멀리(작고 느림) · 중간 · 가까이(크고 빠름) 세 겹으로 깊이감 (size = 결정 지름 px)
+            const size = layer < 0.5 ? 6 + Math.random() * 2.5 : layer < 0.85 ? 9 + Math.random() * 3 : 13 + Math.random() * 4;
+            return {
+                x: Math.random() * W,
+                y: fromTop ? -20 - Math.random() * 20 : Math.random() * H, // 처음엔 화면 전체에 흩어져 바로 보임
+                size,
+                vy: 10 + size * 2.4 + Math.random() * 8,   // 초당 떨어지는 속도(px)
+                drift: (Math.random() - 0.5) * 8,          // 옆으로 흘러가는 정도
+                phase: Math.random() * Math.PI * 2,
+                sway: 0.6 + Math.random() * 0.8,
+                alpha: 0.5 + Math.min(size / 34, 0.45),
+                sprite: crystalSprites[Math.floor(Math.random() * crystalSprites.length)],
+                rot: Math.random() * Math.PI,
+                vr: (Math.random() - 0.5) * 1.0             // 천천히 빙글빙글
+            };
         }
 
-        let spawning = false;
-        window.launchPetals = function () {
+        function frame(now) {
+            if (!coverVisible || document.hidden) { running = false; return; }
+            const dt = Math.min((now - last) / 1000, 0.05); last = now;
+            ctx.clearRect(0, 0, W, H);
+            for (const f of flakes) {
+                f.phase += f.sway * dt;
+                f.y += f.vy * dt;
+                f.x += (f.drift + Math.sin(f.phase) * 10) * dt;
+                f.rot += f.vr * dt;
+                if (f.y > H + 20 || f.x < -20 || f.x > W + 20) Object.assign(f, makeFlake(true));
+                ctx.save();
+                ctx.globalAlpha = f.alpha;
+                ctx.translate(f.x, f.y); ctx.rotate(f.rot);
+                ctx.drawImage(f.sprite, -f.size / 2, -f.size / 2, f.size, f.size);
+                ctx.restore();
+            }
+            requestAnimationFrame(frame);
+        }
+
+        function start() {
+            if (running || !started) return;
+            running = true;
+            last = performance.now();
+            requestAnimationFrame(frame);
+        }
+
+        // 커버가 화면 밖이거나 다른 앱으로 나가면 멈춰서 배터리 절약
+        const cover = document.querySelector('.main-cover');
+        if (cover && 'IntersectionObserver' in window) {
+            new IntersectionObserver(entries => {
+                coverVisible = entries[0].isIntersecting;
+                if (coverVisible) start();
+            }).observe(cover);
+        }
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) start(); });
+
+        window.launchSnow = function () {
             resize();
-            spawning = true;
-            let count = 0;
-            const timer = setInterval(() => {
-                for (let k = 0; k < 2; k++) {
-                    petals.push({
-                        x: Math.random() * cv.width, y: -20,
-                        size: 5 + Math.random() * 6,
-                        vy: 0.9 + Math.random() * 1.1, vx: (Math.random() - 0.5) * 0.4,
-                        phase: Math.random() * 6.28, sway: 0.02 + Math.random() * 0.03,
-                        rot: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.04,
-                        flip: Math.random() * 6.28, alpha: 0.55 + Math.random() * 0.35,
-                        color: Math.random() > 0.5 ? '#ffffff' : '#ffe0e8'
-                    });
-                }
-                if (++count > 26) { clearInterval(timer); spawning = false; }
-            }, 140);
-            if (!running) { running = true; requestAnimationFrame(frame); }
+            if (!started) {
+                const count = Math.min(50, Math.round((W * H) / 8500));
+                for (let i = 0; i < count; i++) flakes.push(makeFlake(false));
+                started = true;
+            }
+            start();
         };
     })();
 
@@ -1151,7 +1213,7 @@
         // 연출 타임라인
         //  0.0s 봉투 열림 → 편지가 올라옴
         //  1.7s 봉투가 부드럽게 사라짐
-        //  2.4s 커버 사진이 서서히 나타나고(이미지 로딩 완료 후), 이름·하트·날짜가 차례로 나타남 + 꽃잎
+        //  2.4s 커버 사진이 서서히 나타나고(이미지 로딩 완료 후), 이름·하트·날짜가 차례로 나타남 + 눈이 내림
         const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const tZoom = reduce ? 500 : 2200;
         const tReveal = reduce ? 800 : 2900;
@@ -1164,7 +1226,7 @@
                     document.body.classList.add('revealed');
                     overlay.style.pointerEvents = 'none';
                     overlay.style.opacity = '0';
-                    if (!reduce && window.launchPetals) setTimeout(window.launchPetals, 700);
+                    if (!reduce && window.launchSnow) setTimeout(window.launchSnow, 500);
                     setTimeout(() => {
                         overlay.style.display = 'none';
                         document.body.classList.remove('locked');
